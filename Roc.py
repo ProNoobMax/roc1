@@ -7,7 +7,7 @@ import time
 # ==========================================
 
 TARGET_PCT = 5.0      # Profit target %
-STOPLOSS_PCT = 2.5    # Stop loss %
+STOPLOSS_PCT = 5.0    # Stop loss %
 
 # ==========================================
 # HELPER FUNCTION
