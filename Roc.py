@@ -3,6 +3,13 @@ import yfinance as yf
 import time
 
 # ==========================================
+# STRATEGY SETTINGS
+# ==========================================
+
+TARGET_PCT = 5.0      # Profit target %
+STOPLOSS_PCT = 2.5    # Stop loss %
+
+# ==========================================
 # HELPER FUNCTION
 # ==========================================
 
@@ -31,6 +38,8 @@ results = []
 trades = pd.read_excel("input.xlsx")
 
 print(f"Loaded {len(trades)} trades")
+print(f"Target = {TARGET_PCT}%")
+print(f"Stoploss = {STOPLOSS_PCT}%")
 
 # ==========================================
 # PROCESS EACH STOCK
@@ -95,9 +104,8 @@ for _, row in trades.iterrows():
     # Target and Stoploss
     # --------------------------------------
 
-    target = entry_open * 1.05
-
-    stoploss = entry_open * 0.975
+    target = entry_open * (1 + TARGET_PCT / 100)
+    stoploss = entry_open * (1 - STOPLOSS_PCT / 100)
 
     # --------------------------------------
     # Check what hits first
@@ -146,13 +154,13 @@ for _, row in trades.iterrows():
     # --------------------------------------
 
     if result == "TARGET":
-        trade_return = 5.0
+    trade_return = TARGET_PCT
 
-    elif result == "STOPLOSS":
-        trade_return = -2.5
+elif result == "STOPLOSS":
+    trade_return = -STOPLOSS_PCT
 
-    else:
-        trade_return = 0.0
+else:
+    trade_return = 0.0
 
     # --------------------------------------
     # Save Result
