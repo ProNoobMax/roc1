@@ -6,20 +6,18 @@ import time
 # STRATEGY SETTINGS
 # ==========================================
 
-TARGET_PCT = 5.0      # Profit target %
-STOPLOSS_PCT = 5.0    # Stop loss %
+TARGET_PCT = 5.0
+STOPLOSS_PCT = 5.0
 
 # ==========================================
 # HELPER FUNCTION
 # ==========================================
 
 def max_streak(series, value):
-
     max_count = 0
     current = 0
 
     for x in series:
-
         if x == value:
             current += 1
             max_count = max(max_count, current)
@@ -37,7 +35,7 @@ results = []
 
 trades = pd.read_excel("input.xlsx")
 
-# Convert all dates to DD-MM-YYYY format
+# Force all dates to DD-MM-YYYY (day first)
 trades["Date"] = pd.to_datetime(
     trades["Date"],
     dayfirst=True,
@@ -56,19 +54,11 @@ for _, row in trades.iterrows():
 
     stock = str(row["Stock"]).strip().upper()
 
-    # Force DD-MM-YYYY interpretation
-signal_date = pd.to_datetime(
-    str(row["Date"]).strip(),
-    dayfirst=True,
-    errors="coerce"
-)
+    signal_date = row["Date"]
 
-if pd.isna(signal_date):
-    print(f"Invalid date for {stock}: {row['Date']}")
-    continue
-
-# Remove time component
-signal_date = signal_date.normalize()
+    if pd.isna(signal_date):
+        print(f"Invalid date for {stock}")
+        continue
 
     ticker = stock + ".NS"
 
@@ -100,7 +90,10 @@ signal_date = signal_date.normalize()
     data.reset_index(inplace=True)
 
     # Normalize Yahoo dates
-data["Date"] = pd.to_datetime(data["Date"]).dt.normalize()
+    data["Date"] = pd.to_datetime(
+        data["Date"]
+    ).dt.normalize()
+
     # --------------------------------------
     # Find next trading day
     # --------------------------------------
@@ -108,15 +101,12 @@ data["Date"] = pd.to_datetime(data["Date"]).dt.normalize()
     future = data[data["Date"] > signal_date]
 
     if len(future) == 0:
-
         print(f"No future data for {stock}")
-
         continue
 
     entry_day = future.iloc[0]
 
     entry_date = entry_day["Date"]
-
     entry_open = float(entry_day["Open"])
 
     # --------------------------------------
@@ -133,39 +123,24 @@ data["Date"] = pd.to_datetime(data["Date"]).dt.normalize()
     trade_data = future.copy()
 
     result = "NO HIT"
-
     days_taken = None
-
     exit_date = None
 
     for i, (_, candle) in enumerate(trade_data.iterrows()):
 
         high = float(candle["High"])
-
         low = float(candle["Low"])
 
-        # TARGET FIRST
-
         if high >= target:
-
             result = "TARGET"
-
-            days_taken = i
-
+            days_taken = i + 1
             exit_date = candle["Date"]
-
             break
 
-        # STOPLOSS
-
         if low <= stoploss:
-
             result = "STOPLOSS"
-
-            days_taken = i
-
+            days_taken = i + 1
             exit_date = candle["Date"]
-
             break
 
     # --------------------------------------
@@ -173,13 +148,13 @@ data["Date"] = pd.to_datetime(data["Date"]).dt.normalize()
     # --------------------------------------
 
     if result == "TARGET":
-    trade_return = TARGET_PCT
+        trade_return = TARGET_PCT
 
-elif result == "STOPLOSS":
-    trade_return = -STOPLOSS_PCT
+    elif result == "STOPLOSS":
+        trade_return = -STOPLOSS_PCT
 
-else:
-    trade_return = 0.0
+    else:
+        trade_return = 0.0
 
     # --------------------------------------
     # Save Result
@@ -188,23 +163,14 @@ else:
     results.append({
 
         "Stock": stock,
-
         "Signal Date": signal_date.date(),
-
         "Entry Date": entry_date.date(),
-
         "Exit Date": exit_date.date() if exit_date is not None else None,
-
         "Entry Open": round(entry_open, 2),
-
         "Target": round(target, 2),
-
         "Stoploss": round(stoploss, 2),
-
         "Result": result,
-
         "Days": days_taken,
-
         "Return %": trade_return
 
     })
@@ -224,9 +190,7 @@ else:
 results_df = pd.DataFrame(results)
 
 if results_df.empty:
-
     print("No results generated.")
-
     exit()
 
 # ==========================================
@@ -272,9 +236,8 @@ avg_days_stoploss = round(
     2
 )
 
-gross_profit = winners * 5
-
-gross_loss = losers * 2.5
+gross_profit = winners * TARGET_PCT
+gross_loss = losers * STOPLOSS_PCT
 
 if gross_loss > 0:
     profit_factor = round(
@@ -339,25 +302,15 @@ summary = pd.DataFrame({
     "Metric": [
 
         "Total Trades",
-
         "Winners",
-
         "Losers",
-
         "No Hit",
-
         "Win Rate %",
-
         "Average Days Target",
-
         "Average Days Stoploss",
-
         "Profit Factor",
-
         "Expectancy %",
-
         "Max Win Streak",
-
         "Max Loss Streak"
 
     ],
@@ -365,25 +318,15 @@ summary = pd.DataFrame({
     "Value": [
 
         total_trades,
-
         winners,
-
         losers,
-
         no_hits,
-
         win_rate,
-
         avg_days_target,
-
         avg_days_stoploss,
-
         profit_factor,
-
         expectancy,
-
         max_win_streak,
-
         max_loss_streak
 
     ]
