@@ -36,8 +36,7 @@ results = []
 trades = pd.read_excel("input.xlsx")
 
 # Force all dates to DD-MM-YYYY (day first)
-trades["Date"] = pd.to_datetime(
-    print(trades.columns.tolist()) 
+trades["Date"] = pd.to_datetime( 
     trades["Date"],
     dayfirst=True,
     errors="coerce"
