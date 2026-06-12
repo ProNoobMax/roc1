@@ -37,6 +37,13 @@ results = []
 
 trades = pd.read_excel("input.xlsx")
 
+# Convert all dates to DD-MM-YYYY format
+trades["Date"] = pd.to_datetime(
+    trades["Date"],
+    dayfirst=True,
+    errors="coerce"
+).dt.normalize()
+
 print(f"Loaded {len(trades)} trades")
 print(f"Target = {TARGET_PCT}%")
 print(f"Stoploss = {STOPLOSS_PCT}%")
@@ -49,7 +56,19 @@ for _, row in trades.iterrows():
 
     stock = str(row["Stock"]).strip().upper()
 
-    signal_date = pd.to_datetime(row["Date"])
+    # Force DD-MM-YYYY interpretation
+signal_date = pd.to_datetime(
+    str(row["Date"]).strip(),
+    dayfirst=True,
+    errors="coerce"
+)
+
+if pd.isna(signal_date):
+    print(f"Invalid date for {stock}: {row['Date']}")
+    continue
+
+# Remove time component
+signal_date = signal_date.normalize()
 
     ticker = stock + ".NS"
 
@@ -80,8 +99,8 @@ for _, row in trades.iterrows():
 
     data.reset_index(inplace=True)
 
-    data["Date"] = pd.to_datetime(data["Date"])
-
+    # Normalize Yahoo dates
+data["Date"] = pd.to_datetime(data["Date"]).dt.normalize()
     # --------------------------------------
     # Find next trading day
     # --------------------------------------
