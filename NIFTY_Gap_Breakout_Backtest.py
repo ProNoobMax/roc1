@@ -41,11 +41,10 @@ trades = []
 for day in sorted(df["Date"].unique()):
     day_df = df[df["Date"] == day].copy()
 
-    first_candle = day_df[day_df["Time"] == time(9,15)]
-    if len(first_candle) == 0:
-        continue
+    day_df = day_df.sort_values("Datetime").reset_index(drop=True)
 
-    first_candle = first_candle.iloc[0]
+# Use first candle of the trading day
+first_candle = day_df.iloc[0]
 
     range_high = float(first_candle["High"])
     range_low = float(first_candle["Low"])
@@ -118,7 +117,7 @@ for day in sorted(df["Date"].unique()):
         result = "EOD"
         r_multiple = 0
 
-        future = day_df.iloc[i+1:]
+        future = day_df.iloc[i+2:]
 
         for _, bar in future.iterrows():
 
@@ -155,9 +154,11 @@ for day in sorted(df["Date"].unique()):
                     break
 
         if exit_price is None:
-            eod = day_df[day_df["Time"] <= time(15,25)]
-            if len(eod):
-                exit_price = float(eod.iloc[-1]["Close"])
+            eod = day_df[day_df["Time"] == time(15,25)]
+
+if len(eod):
+    exit_price = float(eod.iloc[0]["Close"])
+    
             else:
                 exit_price = float(day_df.iloc[-1]["Close"])
 
